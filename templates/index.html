@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riddle Rater 🧠</title>
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --card: #1a1a2e;
+            --accent: #7c3aed;
+            --accent-glow: #a78bfa;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --star-empty: #334155;
+            --star-filled: #fbbf24;
+            --riddle: #06b6d4;
+            --joke: #f472b6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-glow), var(--riddle));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p {
+            color: var(--muted);
+            margin-top: 4px;
+            font-size: 0.9rem;
+        }
+
+        /* Mode toggle */
+        .toggle-row {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+        }
+        .toggle-btn {
+            padding: 10px 28px;
+            border: 2px solid var(--accent);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .toggle-btn:first-child {
+            border-radius: 8px 0 0 8px;
+            border-right: none;
+        }
+        .toggle-btn:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+        .toggle-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+        .toggle-btn:hover:not(.active) {
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--text);
+        }
+
+        /* Card */
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 40px 32px;
+            text-align: center;
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .card.loading {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+        .card .type-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+        }
+        .type-badge.riddle {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--riddle);
+        }
+        .type-badge.joke {
+            background: rgba(244, 114, 182, 0.15);
+            color: var(--joke);
+        }
+        .card .content {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin-bottom: 16px;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+        .card .answer-reveal {
+            margin-top: 12px;
+            padding: 12px 20px;
+            background: rgba(124, 58, 237, 0.1);
+            border-radius: 10px;
+            color: var(--accent-glow);
+            font-style: italic;
+            display: none;
+            font-size: 1.05rem;
+        }
+        .card .answer-reveal.show {
+            display: block;
+            animation: fadeSlide 0.3s ease;
+        }
+        .reveal-btn {
+            background: none;
+            border: 1px solid var(--accent);
+            color: var(--accent-glow);
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+        .reveal-btn:hover {
+            background: rgba(124, 58, 237, 0.15);
+        }
+
+        /* Stars */
+        .stars-row {
+            display: flex;
+            gap: 4px;
+            margin: 8px 0;
+        }
+        .star {
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--star-empty);
+            transition: color 0.15s, transform 0.15s;
+            user-select: none;
+        }
+        .star:hover { transform: scale(1.15); }
+        .star.filled { color: var(--star-filled); }
+        .star.hovered { color: var(--star-filled); }
+
+        .rating-label {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-top: 2px;
+            min-height: 20px;
+        }
+
+        /* Next button */
+        .next-btn {
+            padding: 14px 40px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            margin-top: 12px;
+        }
+        .next-btn:hover {
+            background: #6d28d9;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+            transform: translateY(-1px);
+        }
+        .next-btn:active {
+            transform: translateY(0);
+        }
+        .next-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .stats-bar span {
+            background: var(--card);
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(124, 58, 237, 0.15);
+        }
+        .stats-bar .val {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--star-empty);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Riddle Rater</h1>
+            <p>Rate what the AI serves up</p>
+        </div>
+
+        <div class="toggle-row">
+            <button class="toggle-btn active" data-mode="riddle">🧩 Riddles</button>
+            <button class="toggle-btn" data-mode="joke">😂 Jokes</button>
+        </div>
+
+        <div class="card" id="card">
+            <div class="spinner" id="spinner"></div>
+            <div id="card-content" style="display:none">
+                <span class="type-badge" id="badge"></span>
+                <div class="content" id="content"></div>
+                <button class="reveal-btn" id="reveal-btn" style="display:none">👁 Reveal Answer</button>
+                <div class="answer-reveal" id="answer"></div>
+                <div class="stars-row" id="stars">
+                    <span class="star" data-rating="1">★</span>
+                    <span class="star" data-rating="2">★</span>
+                    <span class="star" data-rating="3">★</span>
+                    <span class="star" data-rating="4">★</span>
+                    <span class="star" data-rating="5">★</span>
+                </div>
+                <div class="rating-label" id="rating-label"></div>
+                <button class="next-btn" id="next-btn" disabled>Next →</button>
+            </div>
+        </div>
+
+        <div class="stats-bar" id="stats-bar">
+            <span>Rated: <span class="val" id="stat-total">0</span></span>
+            <span>Avg: <span class="val" id="stat-avg">—</span> ⭐</span>
+        </div>
+    </div>
+
+    <script>
+        const card = document.getElementById('card');
+        const cardContent = document.getElementById('card-content');
+        const spinner = document.getElementById('spinner');
+        const badge = document.getElementById('badge');
+        const content = document.getElementById('content');
+        const revealBtn = document.getElementById('reveal-btn');
+        const answerDiv = document.getElementById('answer');
+        const starsRow = document.getElementById('stars');
+        const starEls = starsRow.querySelectorAll('.star');
+        const ratingLabel = document.getElementById('rating-label');
+        const nextBtn = document.getElementById('next-btn');
+        const statTotal = document.getElementById('stat-total');
+        const statAvg = document.getElementById('stat-avg');
+        const toggleBtns = document.querySelectorAll('.toggle-btn');
+
+        let currentItem = null;
+        let currentRating = 0;
+        let mode = 'riddle';
+
+        const ratingTexts = ['', 'Terrible 😞', 'Meh 😐', 'Okay 🙂', 'Good 😊', 'Amazing 🤩'];
+
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                toggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                mode = btn.dataset.mode;
+                fetchNew();
+            });
+        });
+
+        starEls.forEach(star => {
+            star.addEventListener('click', () => {
+                currentRating = parseInt(star.dataset.rating);
+                updateStars(currentRating);
+                ratingLabel.textContent = ratingTexts[currentRating];
+                nextBtn.disabled = false;
+            });
+            star.addEventListener('mouseenter', () => {
+                const r = parseInt(star.dataset.rating);
+                starEls.forEach((s, i) => {
+                    if (i < r) s.classList.add('hovered');
+                });
+            });
+            star.addEventListener('mouseleave', () => {
+                starEls.forEach(s => s.classList.remove('hovered'));
+                updateStars(currentRating);
+            });
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentRating === 0 || !currentItem) return;
+            submitRating();
+            fetchNew();
+        });
+
+        revealBtn.addEventListener('click', () => {
+            answerDiv.classList.toggle('show');
+            revealBtn.textContent = answerDiv.classList.contains('show')
+                ? '🙈 Hide Answer'
+                : '👁 Reveal Answer';
+        });
+
+        function updateStars(rating) {
+            starEls.forEach((s, i) => {
+                s.classList.toggle('filled', i < rating);
+            });
+        }
+
+        function resetCard() {
+            currentItem = null;
+            currentRating = 0;
+            updateStars(0);
+            ratingLabel.textContent = '';
+            nextBtn.disabled = true;
+            answerDiv.classList.remove('show');
+            answerDiv.textContent = '';
+            revealBtn.style.display = 'none';
+            revealBtn.textContent = '👁 Reveal Answer';
+            card.classList.add('loading');
+            cardContent.style.display = 'none';
+            spinner.style.display = 'block';
+        }
+
+        async function fetchNew() {
+            resetCard();
+            try {
+                const resp = await fetch(`/generate?mode=${mode}`);
+                const data = await resp.json();
+                if (data.error) {
+                    content.textContent = 'Oops! Something went wrong. Try again.';
+                    badge.textContent = 'Error';
+                    badge.className = 'type-badge riddle';
+                    card.classList.remove('loading');
+                    cardContent.style.display = '';
+                    spinner.style.display = 'none';
+                    return;
+                }
+                currentItem = data;
+                badge.textContent = data.type === 'riddle' ? '🧩 Riddle' : '😂 Joke';
+                badge.className = `type-badge ${data.type}`;
+                content.textContent = data.content;
+
+                if (data.type === 'riddle' && data.answer) {
+                    answerDiv.textContent = `💡 ${data.answer}`;
+                    revealBtn.style.display = 'inline-block';
+                } else {
+                    answerDiv.textContent = '';
+                    revealBtn.style.display = 'none';
+                }
+
+                card.classList.remove('loading');
+                cardContent.style.display = '';
+                spinner.style.display = 'none';
+            } catch (err) {
+                content.textContent = 'Failed to load. Check your connection and try again.';
+                badge.textContent = 'Error';
+                badge.className = 'type-badge riddle';
+                card.classList.remove('loading');
+                cardContent.style.display = '';
+                spinner.style.display = 'none';
+            }
+        }
+
+        async function submitRating() {
+            try {
+                const resp = await fetch('/rate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rating: currentRating,
+                        type: currentItem.type,
+                        content: currentItem.content,
+                        answer: currentItem.answer || '',
+                    }),
+                });
+                const stats = await resp.json();
+                statTotal.textContent = stats.total_rated;
+                statAvg.textContent = stats.average_rating;
+            } catch (err) {
+                console.error('Failed to submit rating:', err);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const resp = await fetch('/stats');
+                const data = await resp.json();
+                statTotal.textContent = data.total;
+                statAvg.textContent = data.average;
+            } catch (err) { /* ignore */ }
+        }
+
+        // Start!
+        loadStats();
+        fetchNew();
+    </script>
+</body>
+</html>
